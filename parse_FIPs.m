@@ -258,6 +258,7 @@ years{i,1} = years{i,1}(1:end-1);
     else
         years{i,1} = '';
     end
+    clear tmp_str tmp_years ind_years
 %     if ~isempty(descr{i,1})==1
 %     descr{i,1} = strip(descr{i,1});
 %     else
