@@ -1,5 +1,7 @@
+% This is handy! https://www.rexegg.com/regex-quickstart.html
 clearvars;
-fid = fopen('D:\GDrive\Library\Maps, Data, GIS\Groups\OCUL Geo\FIP Digitization\2008 FIP inventory\2CdnFIPs18751975\ON8.csv');
+data_dir = 'D:\GDrive\Library\Maps, Data, GIS\Groups\OCUL Geo\FIP Digitization\2008 FIP inventory\2CdnFIPs18751975\';
+fid = fopen([data_dir 'ON8.csv']);
 
 record_num = 1;
 rec_line = 1;
@@ -239,8 +241,20 @@ for i = 1:1:length(title)
         end
     end
     notes{i,1} = strip(tmp_notes); clear tmp_notes;
-
-    %%%%%%%%%%%% Possible to pull out years within the 'title' text?
+%%%%%%%%%%%%%% Condense ledger information into a single column
+    tmp_ledger = '';
+    for j = 1:1:size(ledger(i,:),2)
+        if ~isempty(ledger{i,j})==1
+            if j ==1
+            tmp_ledger = ledger{i,j};
+            else
+            tmp_ledger = [tmp_ledger '; ' ledger{i,j}];
+            end
+        end
+    end
+    ledger{i,1} = strip(tmp_ledger); clear tmp_ledger;
+    
+    %%%%%%%%%%%% Pull out the years within the 'title' text?
     tmp_str = title{i,1};
     ind_years = regexp(tmp_str,'\[1[8-9][0-9][0-9]\]'); 
     tmp_years = {};
@@ -273,3 +287,9 @@ end
     descr(:,2:end) = [];  
 
 notes(:,2:end) = [];   
+ledger(:,2:end) = [];   
+
+%% Compile final output:
+out = [title place years scale ledger holdings descr dimensions num_items format notes];
+out = [{'Title','Place Name','Year','Scale','Ledger','Holdings','Full Description','Dimensions','Number of items','Format','Notes'};out];
+xlswrite([data_dir 'ON8-clean.xls'],out);
