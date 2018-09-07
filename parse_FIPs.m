@@ -169,6 +169,14 @@ for i = 1:1:length(title)
     else
     holdings{i,1} = '';   
     end
+        holdings{i,1} = strrep(holdings{i,1},'  ',' ');
+    holdings{i,1} = strrep(holdings{i,1},' (','(');
+    holdings{i,1} = strrep(holdings{i,1},'  (','(');
+    
+%     holdings{i,1} = regexprep(holdings{i,1},'/s[A-Z]','
+%     holdings{i,1} = strrep(holdings{i,1},' ','; ');
+%     holdings{i,1} = strrep(holdings{i,1},'; ; ','; ');
+     holdings{i,1}(regexp(holdings{i,1},'\s[A-Z]')) = ';';
     
     % Condense description information into a single column
     tmp_desc = '';
@@ -183,7 +191,43 @@ for i = 1:1:length(title)
     end   
     descr{i,1} = strip(tmp_desc);
     clear tmp_desc;
-    % Condense notes information into a single column
+    
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Now, break description into two separate fields -- 
+    % a) 'Description' field will be distilled to contain only the number of sheets/plates. 
+    % b) Make a new field called 'size' that contains the dimensions.
+
+    ind_pl_sh = strfind(descr{i,1},'plate');
+    if isempty(ind_pl_sh)==1
+    ind_pl_sh = strfind(descr{i,1},'sheet');
+    format{i,1} = 'sheet';
+    else
+    format{i,1} = 'plate';
+    end
+    
+    if ~isempty(ind_pl_sh)==1
+    tmp_str = descr{i,1}(1:ind_pl_sh); ind_bl = findstr(tmp_str,' ');
+    num_items{i,1} = tmp_str(ind_bl(end-1)+1:ind_bl(end)-1);
+    else
+    num_items{i,1} = '';
+    format{i,1} = '';
+    end
+    clear ind_pl_sh ind_bl tmp_str
+    
+    %%%%%%%% b) extract size
+    ind_size_start = regexp(descr{i,1},';\s[1-9][1-9]');
+    ind_size_end = regexp(descr{i,1},'\scm');
+
+    if ~isempty(ind_size_start) && ~isempty(ind_size_end)
+        dimensions{i,1} = strip(descr{i,1}(ind_size_start(1)+2:min(ind_size_end(1)+3,length(descr{i,1}))));
+    if strcmp(dimensions{i,1}(end),'.')~=1
+        dimensions{i,1}(end+1) = '.';
+    end
+    else
+        dimensions{i,1} = '';
+    end
+    
+    %%%%%%%%%%%%%% Condense notes information into a single column
     tmp_notes = '';
     for j = 1:1:size(notes(i,:),2)
         if ~isempty(notes{i,j})==1
@@ -196,6 +240,24 @@ for i = 1:1:length(title)
     end
     notes{i,1} = strip(tmp_notes); clear tmp_notes;
 
+    %%%%%%%%%%%% Possible to pull out years within the 'title' text?
+    tmp_str = title{i,1};
+    ind_years = regexp(tmp_str,'\[1[8-9][0-9][0-9]\]'); 
+    tmp_years = {};
+    for k = 1:1:length(ind_years)
+        tmp_years{size(tmp_years,1)+1,1} = tmp_str(ind_years(k):ind_years(k)+5);
+    end
+    ind_years = regexp(tmp_str,'(?<!\[)1[8-9][0-9][0-9]'); 
+    for k = 1:1:length(ind_years)
+        tmp_years{size(tmp_years,1)+1,1} = tmp_str(ind_years(k):ind_years(k)+3);
+    end
+    tmp_years = unique(tmp_years);
+    if ~isempty(tmp_years)==1
+years{i,1} = sprintf('%s;',tmp_years{:});
+years{i,1} = years{i,1}(1:end-1);
+    else
+        years{i,1} = '';
+    end
 %     if ~isempty(descr{i,1})==1
 %     descr{i,1} = strip(descr{i,1});
 %     else
